@@ -11,21 +11,21 @@ import * as moment from "moment";
 import { CircularProgress, TextField } from "@material-ui/core";
 import RepositoryModalDetails from "./RepositoryModalDetails";
 
-export default class RepositoriesList extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      username: "amednin",
-      list: [],
-      openModal: false,
-      repoNameSelected: '',
-    };
-    console.log("constructor");
-  }
+const RepositoriesList = ({ classes }) => {
+  const [loading, setLoading] = React.useState(true);
+  const [username, setUsername] = React.useState('amednin');
+  const [list, setList] = React.useState([]);
+  const [openModal, setOpenModal] = React.useState(false);
+  const [repoNameSelected, setRepoNameSelected] = React.useState('');
 
-  async retrieveRepos() {
-    const { username } = this.state;
+  React.useEffect(() => {
+    retrieveRepos().then((repos) => {
+      setList(repos);
+      setLoading(false);
+    });
+  }, [username]);
+
+  async function retrieveRepos() {
     const response = await getRepositoryList(username);
     if (!response.ok) {
       return Promise.resolve([]);
@@ -35,98 +35,77 @@ export default class RepositoriesList extends React.Component {
     return reposPromise;
   }
 
-  componentDidMount() {
-    this.retrieveRepos().then((repos) => {
-      this.setState({ list: repos, loading: false });
-    });
-
-    console.log("on mounted");
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    console.log("on state update");
-    if (prevState.username !== this.state.username) {
-      this.setState({ loading: true });
-      this.retrieveRepos().then((repos) => {
-        this.setState({ list: repos, loading: false });
-      });
-    }
-  }
-
-  handleDetailsEvent = (repoName) => {
+  const handleDetailsEvent = (repoName) => {
     return e => {
-      this.setState({ openModal: true });
-      this.setState({ repoNameSelected: repoName });
+      setOpenModal(true);
+      setRepoNameSelected(repoName);
     }
   }
 
-  render() {
-    const { classes } = this.props;
-    console.log("on render");
-
-    return (
-      <>
-        {this.state.openModal && <RepositoryModalDetails
-          open={this.state.openModal}
-          onClose={() => this.setState({ openModal: false })}
-          username={this.state.username}
-          repoName={this.state.repoNameSelected}
-        />}
-        <TextField
-          id="outlined-basic"
-          label="Enter username"
-          variant="outlined"
-          value={this.state.username}
-          onChange={(e) => this.setState({ username: e.target.value })}
-        />
-        {this.state.loading && <CircularProgress key={`loader-${this.state.username}`} />}
-        {!this.state.loading && (
-          <List className={classes.root}>
-            {this.state.list.length === 0 && <h3>No repositories found!</h3>}
-            {this.state.list.map((i) => (
-              <>
-                <ListItem alignItems="flex-start" key={i.id}>
-                  <ListItemAvatar>
-                    <Avatar alt={i.owner.login} src={i.owner.avatar_url} />
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={i.name}
-                    secondary={
-                      <React.Fragment>
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          className={classes.inline}
-                          color="textPrimary"
-                        >
-                          Created at {moment(i.created_at).fromNow()}
-                        </Typography>
-                        {" - visit the repository at "}
-                        <a
-                          className={classes.link}
-                          href={i.html_url}
-                          target="_blank"
-                        >
-                          {i.html_url}
-                        </a>
-                        <br />
-                        <a className={classes.linkDetails} onClick={this.handleDetailsEvent(i.name)}>
-                          See more details
-                        </a>
-                      </React.Fragment>
-                    }
-                  />
-                </ListItem>
-                <Divider
-                  variant="inset"
-                  component="li"
-                  key={`divider-${i.id}`}
+  return (
+    <>
+      {openModal && <RepositoryModalDetails
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        username={username}
+        repoName={repoNameSelected}
+      />}
+      <TextField
+        id="outlined-basic"
+        label="Enter username"
+        variant="outlined"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      {loading && <CircularProgress key={`loader-${username}`} />}
+      {!loading && (
+        <List className={classes.root}>
+          {list.length === 0 && <h3>No repositories found!</h3>}
+          {list.map((i) => (
+            <>
+              <ListItem alignItems="flex-start" key={i.id}>
+                <ListItemAvatar>
+                  <Avatar alt={i.owner.login} src={i.owner.avatar_url} />
+                </ListItemAvatar>
+                <ListItemText
+                  primary={i.name}
+                  secondary={
+                    <React.Fragment>
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        className={classes.inline}
+                        color="textPrimary"
+                      >
+                        Created at {moment(i.created_at).fromNow()}
+                      </Typography>
+                      {" - visit the repository at "}
+                      <a
+                        className={classes.link}
+                        href={i.html_url}
+                        target="_blank"
+                      >
+                        {i.html_url}
+                      </a>
+                      <br />
+                      <a className={classes.linkDetails} onClick={handleDetailsEvent(i.name)}>
+                        See more details
+                      </a>
+                    </React.Fragment>
+                  }
                 />
-              </>
-            ))}
-          </List>
-        )}
-      </>
-    );
-  }
+              </ListItem>
+              <Divider
+                variant="inset"
+                component="li"
+                key={`divider-${i.id}`}
+              />
+            </>
+          ))}
+        </List>
+      )}
+    </>
+  );
 }
+
+export default RepositoriesList;

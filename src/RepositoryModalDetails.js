@@ -10,17 +10,27 @@ import {
 import { getRepositoryDetails } from "./api/github";
 import RepoDetailsInfo from "./RepoDetailsInfo";
 
-export default class RepositoryModalDetails extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      repoDetails: null,
-      loading: false,
-    }
-  }
+export default function RepositoryModalDetails({ username,repoName, open, onClose }) {
+  const [repoDetails, setRepoDetails] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
 
-  async retrieveRepoDetails() {
-    const { username, repoName } = this.props;
+  React.useEffect(() => {
+    retrieveRepoDetails().then((repoDetails) => {
+      setRepoDetails(repoDetails);
+      setLoading(false);
+    });
+  }, [repoName, username]);
+
+  React.useEffect(() => {
+    window.addEventListener("keydown", handleEscEvent, false);
+
+    return () => {
+      console.log('Unmounting Modal Details');
+      window.removeEventListener("keydown", handleEscEvent, false);
+    }
+  });
+
+  async function retrieveRepoDetails() {
     const response = await getRepositoryDetails(username, repoName);
     if (!response.ok) {
       return Promise.resolve([]);
@@ -30,56 +40,38 @@ export default class RepositoryModalDetails extends React.Component {
     return repoDetailsPromise;
   }
 
-  handleEscEvent = (event) => {
+  const handleEscEvent = (event) => {
     if (event.defaultPrevented) {
       return; // Do nothing if the event was already processed
     }
 
     if (event.key === "Escape") {
       console.log("Closing modal with ESC key")
-      this.props.onClose();
+      onClose();
     }
 
     event.preventDefault();
   }
 
-  componentDidMount() {
-    this.setState({loading: true});
-    this.retrieveRepoDetails().then((repoDetails) => {
-      console.log(repoDetails);
-      this.setState({ repoDetails, loading: false });
-    });
 
-    window.addEventListener("keydown", this.handleEscEvent, false);
-  }
-
-  componentWillUnmount() {
-    console.log('Umounting modal');
-    // window.removeEventListener("keydown", this.handleEscEvent, false);
-  }
-
-  render() {
-    const { open, onClose } = this.props;
-
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        aria-labelledby="max-width-dialog-title"
-      >
-        <DialogTitle id="max-width-dialog-title">Repository name</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {this.state.loading && <span><b>Loading...</b></span>}
-            {this.state.repoDetails && <RepoDetailsInfo {...this.state.repoDetails} />}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    );
-  }
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby="max-width-dialog-title"
+    >
+      <DialogTitle id="max-width-dialog-title">Repository name</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          {loading && <span><b>Loading...</b></span>}
+          {repoDetails && <RepoDetailsInfo {...repoDetails} />}
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 }
