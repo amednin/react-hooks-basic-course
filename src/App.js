@@ -33,13 +33,12 @@ const useStyles = makeStyles((theme) => ({
 
 function App() {
   const classes = useStyles();
-  const [open, setOpen] = React.useState(false);
 
   return (
     <div className={classes.container}>
       <h1>Github repositories information</h1>
-      <RepositoriesList classes={classes} openModal={() => setOpen(true)} />
-      <RepositoryModalDetails open={open} onClose={() => setOpen(false)} />
+      <RepositoriesList classes={classes} />
+      
     </div>
   );
 }

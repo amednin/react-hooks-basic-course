@@ -9,6 +9,7 @@ import Avatar from "@material-ui/core/Avatar";
 import Typography from "@material-ui/core/Typography";
 import * as moment from "moment";
 import { CircularProgress, TextField } from "@material-ui/core";
+import RepositoryModalDetails from "./RepositoryModalDetails";
 
 export default class RepositoriesList extends React.Component {
   constructor(props) {
@@ -17,6 +18,8 @@ export default class RepositoriesList extends React.Component {
       loading: true,
       username: "amednin",
       list: [],
+      openModal: false,
+      repoNameSelected: '',
     };
     console.log("constructor");
   }
@@ -50,12 +53,25 @@ export default class RepositoriesList extends React.Component {
     }
   }
 
+  handleDetailsEvent = (repoName) => {
+    return e => {
+      this.setState({ openModal: true });
+      this.setState({ repoNameSelected: repoName });
+    }
+  }
+
   render() {
-    const { classes, openModal } = this.props;
+    const { classes } = this.props;
     console.log("on render");
 
     return (
       <>
+        {this.state.openModal && <RepositoryModalDetails
+          open={this.state.openModal}
+          onClose={() => this.setState({ openModal: false })}
+          username={this.state.username}
+          repoName={this.state.repoNameSelected}
+        />}
         <TextField
           id="outlined-basic"
           label="Enter username"
@@ -63,7 +79,7 @@ export default class RepositoriesList extends React.Component {
           value={this.state.username}
           onChange={(e) => this.setState({ username: e.target.value })}
         />
-        {this.state.loading && <CircularProgress />}
+        {this.state.loading && <CircularProgress key={`loader-${this.state.username}`} />}
         {!this.state.loading && (
           <List className={classes.root}>
             {this.state.list.length === 0 && <h3>No repositories found!</h3>}
@@ -94,7 +110,7 @@ export default class RepositoriesList extends React.Component {
                           {i.html_url}
                         </a>
                         <br />
-                        <a className={classes.linkDetails} onClick={openModal}>
+                        <a className={classes.linkDetails} onClick={this.handleDetailsEvent(i.name)}>
                           See more details
                         </a>
                       </React.Fragment>
